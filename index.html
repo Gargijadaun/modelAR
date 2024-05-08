@@ -22,12 +22,14 @@
         let xrRefSpace;
         let xrViewerSpace;
         let xrHitTestSource;
+        let planeDetected = false; // Flag to indicate whether a plane has been detected
 
         // GLTF loader
         const loader = new THREE.GLTFLoader();
 
         // GLTF model
         let model;
+        let modelPlaced = false; // Flag to indicate whether the model has been placed
 
         function setup() {
             // renderer
@@ -62,18 +64,21 @@
                 reticle.visible = false;
                 if (xrHitTestSource && pose) {
                     const hitTestResults = frame.getHitTestResults(xrHitTestSource);
-                    if (hitTestResults.length > 0) {
-                        reticle.visible = true;
+                    if (hitTestResults.length > 0 && !planeDetected) {
+                        planeDetected = true; // Set the flag to true once a plane is detected
                         const pose = hitTestResults[0].getPose(xrRefSpace);
                         const position = pose.transform.position;
+                        reticle.visible = true;
                         reticle.position.set(position.x, position.y, position.z);
 
-                        // Load and position the model
-                        if (!model) {
+                        // Load and position the model if not already placed
+                        if (!modelPlaced) {
                             loadModel();
-                        } else {
-                            model.position.copy(reticle.position);
+                            modelPlaced = true;
                         }
+                        
+                        // Stop hit test source to prevent further plane detections
+                        xrHitTestSource.cancel();
                     }
                 }
             });
@@ -83,11 +88,12 @@
         function loadModel() {
             loader.load(
                 // path to the model
-                '1.glb',
+                'path/to/your/model.glb',
                 // onLoad callback
                 function (gltf) {
                     model = gltf.scene;
                     scene.add(model);
+                    model.position.copy(reticle.position);
                 },
                 // onProgress callback
                 undefined,
