@@ -14,7 +14,6 @@
         <button id="xr-button">Tap To Start</button>
         <button id="xr-button1">Load Model 1</button>
         <button id="xr-button2">Load Model 2</button>
-       
     </div>
     <script>
         let renderer, camera, light, reticle, scene;
@@ -27,6 +26,7 @@
         let model;
         let modelPlaced = false;
         let modelPath = '';
+        let backBtn;
 
         function setup() {
             renderer = new THREE.WebGLRenderer({
@@ -48,6 +48,13 @@
             scene = new THREE.Scene();
             scene.add(light);
             scene.add(reticle);
+
+            // Create the back button
+            backBtn = document.createElement("button");
+            backBtn.innerText = "Back";
+            backBtn.style.display = "none"; // Initially hide the back button
+            backBtn.addEventListener("click", onBackButtonClick);
+            document.body.appendChild(backBtn);
         }
 
         function update() {
@@ -80,6 +87,8 @@
                     model = gltf.scene;
                     scene.add(model);
                     model.position.copy(reticle.position);
+                    // Show the back button when the model is loaded
+                    backBtn.style.display = "block";
                 },
                 undefined,
                 function (error) {
@@ -111,13 +120,30 @@
             });
         }
 
+        function onBackButtonClick() {
+            // Hide the back button
+            backBtn.style.display = "none";
+
+            // Show the three buttons again
+            document.getElementById("xr-button").style.display = "block";
+            document.getElementById("xr-button1").style.display = "block";
+            document.getElementById("xr-button2").style.display = "block";
+
+            // Remove the loaded model from the scene
+            if (model) {
+                scene.remove(model);
+                model = null;
+                modelPlaced = false;
+            }
+        }
+
         window.onload = () => {
             setup();
             if ("xr" in navigator) {
                 const button = document.getElementById("xr-button");
                 const button1 = document.getElementById("xr-button1");
                 const button2 = document.getElementById("xr-button2");
-              
+
                 navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
                     if (supported) {
                         button.disabled = !supported;
@@ -126,34 +152,43 @@
                     }
                 });
                 button.addEventListener("click", onRequestSession);
-                button1.addEventListener("click", onRequestSession);
-                button2.addEventListener("click", onRequestSession);
+                button1.addEventListener("click", function () {
+                    modelPath = '1.glb';
+                    if (xrSession) {
+                        loadModel(modelPath);
+                    }
+                });
+                button2.addEventListener("click", function () {
+                    modelPath = '2.glb';
+                    if (xrSession) {
+                        loadModel(modelPath);
+                    }
+                });
             } else {
                 alert("WebXR not supported!");
             }
 
-            document.getElementById('xr-button1').addEventListener('click', function() {
+            document.getElementById('xr-button1').addEventListener('click', function () {
                 modelPath = '1.glb';
                 if (xrSession) {
                     loadModel(modelPath);
                 }
             });
 
-            document.getElementById('xr-button').addEventListener('click', function() {
+            document.getElementById('xr-button').addEventListener('click', function () {
                 modelPath = '2.glb';
                 if (xrSession) {
                     loadModel(modelPath);
                 }
             });
 
-            document.getElementById('xr-button2').addEventListener('click', function() {
+            document.getElementById('xr-button2').addEventListener('click', function () {
                 modelPath = '3.glb';
                 if (xrSession) {
                     loadModel(modelPath);
                 }
             });
         }
-
     </script>
 </body>
 
