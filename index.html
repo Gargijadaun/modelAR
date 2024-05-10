@@ -14,7 +14,8 @@
         <button id="xr-button" class="model-button" data-model-path="3.glb" data-scale="0.4">Tap To Start</button>
         <button id="xr-button1" class="model-button" data-model-path="1.glb" data-scale="0.5">Load Model 1</button>
         <button id="xr-button2" class="model-button" data-model-path="2.glb" data-scale="0.5">Load Model 2</button>
-        <button id="backbtn">Back</button>
+        <button id="ar-backbtn" class="model-button" style="position: absolute; top: 20px; left: 20px; display: none;">Back</button>
+
 
     </div>
     <script>
@@ -52,11 +53,9 @@
             scene.add(reticle);
 
             // Create the back button
-            backBtn = document.getElementById("backbtn");
-            // backBtn.innerText = "Back";
-            backBtn.style.display = "none"; // Initially hide the back button
-            backBtn.addEventListener("click", onBackButtonClick);
-            // document.body.appendChild(backBtn);
+            arBackBtn = document.getElementById("ar-backbtn");
+    arBackBtn.addEventListener("click", onARBackButtonClick);
+    document.body.appendChild(arBackBtn);
         }
 
         function update() {
@@ -113,7 +112,7 @@ function onRequestSession(modelPath, scale) {
 
         function onStartSession(session, modelPath, scale) {
             renderer.xr.enabled = true;
-            document.getElementById("backbtn").style.display = "block";
+            arBackBtn.style.display = "block";
             renderer.xr.setReferenceSpaceType("local");
             renderer.xr.setSession(session);
             xrSession = session;
@@ -132,9 +131,9 @@ function onRequestSession(modelPath, scale) {
             });
         }
 
-        function onBackButtonClick() {
+        function onARBackButtonClick() {
             // Hide the back button
-            backBtn.style.display = "none";
+            arBackBtn.style.display = "none";
 
             // Remove the loaded model from the scene
             if (model) {
