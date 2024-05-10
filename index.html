@@ -1,76 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebXR 3D Model Example</title>
-    <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; }
-        #buttons { position: absolute; top: 10px; left: 10px; z-index: 999; }
-        button { margin: 5px; }
-    </style>
-</head>
-<body>
-    <div id="buttons">
-        <button onclick="loadModel('1.glb')">Load Model 1</button>
-        <button onclick="loadModel('2.glb')">Load Model 2</button>
-        <button onclick="loadModel('3.glb')">Load Model 3</button>
-    </div>
+	<head>
+		<title>three.js ar - plane detection</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+		<link type="text/css" rel="stylesheet" href="./examples/main.css">
+	</head>
+	<body>
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+		<div id="info">
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> ar - plane detection<br/>(Chrome Android 81+)
+		</div>
 
-    <script>
-        let scene, camera, renderer;
-        let currentModel = null;
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
 
-        init();
-        animate();
+		<script type="module">
 
-        function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
+			import * as THREE from 'three';
+			import { ARButton } from 'ARButton.js';
+			import { XRPlanes } from 'XRPlanes.js';
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-            scene.add(ambientLight);
+			//
 
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-            directionalLight.position.set(0, 1, 0);
-            scene.add(directionalLight);
-        }
+			const renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setAnimationLoop( animate );
+			renderer.xr.enabled = true;
+			document.body.appendChild( renderer.domElement );
 
-        function loadModel(modelUrl) {
-            if (currentModel) {
-                scene.remove(currentModel);
-            }
-            const loader = new THREE.GLTFLoader();
-            loader.load(
-                modelUrl,
-                function(gltf) {
-                    currentModel = gltf.scene;
-                    scene.add(currentModel);
-                },
-                undefined,
-                function(error) {
-                    console.error(error);
-                }
-            );
-        }
+			document.body.appendChild( ARButton.createButton( renderer, {
+				requiredFeatures: [ 'plane-detection' ]
+			} ) );
 
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-        }
+			window.addEventListener( 'resize', onWindowResize );
 
-        window.addEventListener('resize', function() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
-</body>
+			//
+
+			const scene = new THREE.Scene();
+
+			const planes = new XRPlanes( renderer );
+			scene.add( planes );
+
+			const camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 20 );
+
+			const light = new THREE.HemisphereLight( 0xffffff, 0xbbbbff, 3 );
+			light.position.set( 0.5, 1, 0.25 );
+			scene.add( light );
+
+			//
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+	</body>
 </html>
