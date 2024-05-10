@@ -11,9 +11,9 @@
 
 <body>
     <div class="container">
-        <button id="xr-button" class="model-button" data-model-path="3.glb" data-scale="0.2">Tap To Start</button>
+        <button id="xr-button" class="model-button" data-model-path="3.glb" data-scale="0.4">Tap To Start</button>
         <button id="xr-button1" class="model-button" data-model-path="1.glb" data-scale="0.5">Load Model 1</button>
-        <button id="xr-button2" class="model-button" data-model-path="2.glb" data-scale="0.4">Load Model 2</button>
+        <button id="xr-button2" class="model-button" data-model-path="2.glb" data-scale="0.5">Load Model 2</button>
         <button id="backbtn">Back</button>
 
     </div>
@@ -56,7 +56,7 @@
             // backBtn.innerText = "Back";
             backBtn.style.display = "none"; // Initially hide the back button
             backBtn.addEventListener("click", onBackButtonClick);
-            document.body.appendChild(backBtn);
+            // document.body.appendChild(backBtn);
         }
 
         function update() {
@@ -113,7 +113,7 @@ function onRequestSession(modelPath, scale) {
 
         function onStartSession(session, modelPath, scale) {
             renderer.xr.enabled = true;
-            backBtn.style.display = "block";
+            document.getElementById("backbtn").style.display = "block";
             renderer.xr.setReferenceSpaceType("local");
             renderer.xr.setSession(session);
             xrSession = session;
