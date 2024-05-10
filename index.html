@@ -25,6 +25,9 @@
     <!-- Stop AR Button -->
     <button id="exit-button">Stop AR</button>
 
+    <!-- Back button for AR -->
+    <button id="ar-backbtn" onclick="onARBackButtonClick()">Back</button>
+
     <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
     <script>
@@ -104,7 +107,7 @@
                     scene.add(model);
                     model.position.copy(reticle.position);
                     // Show the back button when the model is loaded
-                    createBackButton();
+                    document.getElementById('ar-backbtn').style.display = 'block';
                 },
                 undefined,
                 function (error) {
@@ -139,30 +142,15 @@
             });
         }
 
-        function createBackButton() {
-            // Create a plane geometry for the button
-            var geometry = new THREE.PlaneGeometry(1, 0.5);
-            // Create a basic material for the button
-            var material = new THREE.MeshBasicMaterial({ color: 0x007bff, side: THREE.DoubleSide });
-            // Create the button mesh
-            arBackBtn = new THREE.Mesh(geometry, material);
-            // Position the button
-            arBackBtn.position.set(0, 0, -5); // Adjust as needed
-            // Add the button to the scene
-            scene.add(arBackBtn);
-            // Listen for click events on the button
-            arBackBtn.onClick = function () {
-                // Handle back button click event
-                console.log("Back button clicked!");
-                // Hide the back button
-                scene.remove(arBackBtn);
-                // Remove the loaded model from the scene
-                if (model) {
-                    scene.remove(model);
-                    model = null;
-                    modelPlaced = false;
-                }
-            };
+        function onARBackButtonClick() {
+            // Hide the back button
+            document.getElementById('ar-backbtn').style.display = 'none';
+            // Remove the loaded model from the scene
+            if (model) {
+                scene.remove(model);
+                model = null;
+                modelPlaced = false;
+            }
         }
 
         window.onload = () => {
