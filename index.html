@@ -12,22 +12,17 @@
             left: 20px;
             display: none;
         }
-
-        canvas {
-            display: block;
-        }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <button id="xr-button" class="model-button" data-model-path="2.glb" data-scale="0.4">Tap To Start</button>
+        <button id="xr-button" class="model-button" data-model-path="3.glb" data-scale="0.4">Tap To Start</button>
         <button id="xr-button1" class="model-button" data-model-path="1.glb" data-scale="0.5">Load Model 1</button>
-        <button id="xr-button2" class="model-button" data-model-path="3.glb" data-scale="0.5">Load Model 2</button>
+        <button id="xr-button2" class="model-button" data-model-path="2.glb" data-scale="0.5">Load Model 2</button>
     </div>
 
-    <!-- Back button for AR -->
-    <button id="ar-backbtn" class="model-button" onclick="onARBackButtonClick()">Back</button>
+    <!-- Stop AR Button -->
     <button id="exit-button">Stop AR</button>
 
     <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
@@ -71,11 +66,6 @@
             scene = new THREE.Scene();
             scene.add(light);
             scene.add(reticle);
-
-            // Create the back button for AR
-            arBackBtn = document.getElementById("ar-backbtn");
-            arBackBtn.style.display = "none"; // Initially hide the button
-            document.body.appendChild(arBackBtn);
         }
 
         function update() {
@@ -114,7 +104,7 @@
                     scene.add(model);
                     model.position.copy(reticle.position);
                     // Show the back button when the model is loaded
-                    arBackBtn.style.display = "block";
+                    createBackButton();
                 },
                 undefined,
                 function (error) {
@@ -149,26 +139,39 @@
             });
         }
 
-        function onARBackButtonClick() {
-            // Hide the back button
-            arBackBtn.style.display = "none";
-
-            // Remove the loaded model from the scene
-            if (model) {
-                scene.remove(model);
-                model = null;
-                modelPlaced = false;
-            }
+        function createBackButton() {
+            // Create a plane geometry for the button
+            var geometry = new THREE.PlaneGeometry(1, 0.5);
+            // Create a basic material for the button
+            var material = new THREE.MeshBasicMaterial({ color: 0x007bff, side: THREE.DoubleSide });
+            // Create the button mesh
+            arBackBtn = new THREE.Mesh(geometry, material);
+            // Position the button
+            arBackBtn.position.set(0, 0, -5); // Adjust as needed
+            // Add the button to the scene
+            scene.add(arBackBtn);
+            // Listen for click events on the button
+            arBackBtn.onClick = function () {
+                // Handle back button click event
+                console.log("Back button clicked!");
+                // Hide the back button
+                scene.remove(arBackBtn);
+                // Remove the loaded model from the scene
+                if (model) {
+                    scene.remove(model);
+                    model = null;
+                    modelPlaced = false;
+                }
+            };
         }
 
         window.onload = () => {
             setup();
             if ("xr" in navigator) {
                 const buttons = document.querySelectorAll(".model-button");
-
                 buttons.forEach(button => {
                     button.addEventListener("click", function () {
-                        const modelPath = this.getAttribute("data-model-path");
+                        modelPath = this.getAttribute("data-model-path");
                         const scale = parseFloat(this.getAttribute("data-scale")); // Parse scale attribute to float
                         onRequestSession(modelPath, scale);
                     });
