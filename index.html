@@ -11,9 +11,9 @@
 
 <body>
     <div class="container">
-        <button id="xr-button" class="model-button" data-model-path="3.glb">Tap To Start</button>
-        <button id="xr-button1" class="model-button" data-model-path="1.glb">Load Model 1</button>
-        <button id="xr-button2" class="model-button" data-model-path="2.glb">Load Model 2</button>
+        <button id="xr-button" class="model-button" data-model-path="3.glb" data-scale="0.2">Tap To Start</button>
+        <button id="xr-button1" class="model-button" data-model-path="1.glb" data-scale="0.5">Load Model 1</button>
+        <button id="xr-button2" class="model-button" data-model-path="2.glb" data-scale="0.4">Load Model 2</button>
         <button id="backbtn">Back</button>
 
     </div>
@@ -82,35 +82,38 @@
             renderer.render(scene, camera);
         }
 
-        function loadModel(path) {
-            if (model) {
-                scene.remove(model);
-                model = null;
-            }
-            loader.load(
-                path,
-                function (gltf) {
-                    model = gltf.scene;
-                    scene.add(model);
-                    model.position.copy(reticle.position);
-                    // Show the back button when the model is loaded
-                    backBtn.style.display = "block";
-                },
-                undefined,
-                function (error) {
-                    console.error('Error loading model', error);
-                }
-            );
+        function loadModel(path, scale) {
+    if (model) {
+        scene.remove(model);
+        model = null;
+    }
+    loader.load(
+        path,
+        function (gltf) {
+            model = gltf.scene;
+            model.scale.set(scale, scale, scale); // Set the scale of the model
+            scene.add(model);
+            model.position.copy(reticle.position);
+            // Show the back button when the model is loaded
+            // backBtn.style.display = "block";
+        },
+        undefined,
+        function (error) {
+            console.error('Error loading model', error);
         }
+    );
+}
 
-        function onRequestSession(modelPath) {
-            navigator.xr
-                .requestSession("immersive-ar", { requiredFeatures: ["local", "hit-test"] })
-                .then(session => onStartSession(session, modelPath));
-        }
+function onRequestSession(modelPath, scale) {
+    navigator.xr
+        .requestSession("immersive-ar", { requiredFeatures: ["local", "hit-test"] })
+        .then(session => onStartSession(session, modelPath, scale));
+}
 
-        function onStartSession(session, modelPath) {
+
+        function onStartSession(session, modelPath, scale) {
             renderer.xr.enabled = true;
+            backBtn.style.display = "block";
             renderer.xr.setReferenceSpaceType("local");
             renderer.xr.setSession(session);
             xrSession = session;
@@ -124,7 +127,7 @@
                 xrRefSpace = refSpace;
                 renderer.setAnimationLoop(update);
                 if (modelPath) {
-                    loadModel(modelPath);
+                    loadModel(modelPath, scale);
                 }
             });
         }
@@ -142,26 +145,27 @@
         }
 
         window.onload = () => {
-            setup();
-            if ("xr" in navigator) {
-                const buttons = document.querySelectorAll(".model-button");
+    setup();
+    if ("xr" in navigator) {
+        const buttons = document.querySelectorAll(".model-button");
 
-                buttons.forEach(button => {
-                    button.addEventListener("click", function () {
-                        modelPath = this.getAttribute("data-model-path");
-                        onRequestSession(modelPath);
-                    });
-                });
+        buttons.forEach(button => {
+            button.addEventListener("click", function () {
+                const modelPath = this.getAttribute("data-model-path");
+                const scale = parseFloat(this.getAttribute("data-scale")); // Parse scale attribute to float
+                onRequestSession(modelPath, scale);
+            });
+        });
 
-                navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
-                    if (!supported) {
-                        alert("AR not supported");
-                    }
-                });
-            } else {
-                alert("WebXR not supported!");
+        navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
+            if (!supported) {
+                alert("AR not supported");
             }
-        }
+        });
+    } else {
+        alert("WebXR not supported!");
+    }
+}
     </script>
 </body>
 
