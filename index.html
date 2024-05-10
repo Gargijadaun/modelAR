@@ -12,24 +12,34 @@
 <body>
     <div class="container">
         <button id="xr-button">Tap To Start</button>
+        <button id="model1-button">Load Model 1</button>
+        <button id="model2-button">Load Model 2</button>
+        <button id="model3-button">Load Model 3</button>
     </div>
     <script>
-        // three
+        // Three.js variables
         let renderer, camera, light, reticle, scene;
 
-        // xr session
+        // XR session variables
         let xrSession;
         let xrRefSpace;
         let xrViewerSpace;
         let xrHitTestSource;
-        let planeDetected = false; // Flag to indicate whether a plane has been detected
+        let planeDetected = false;
+        let modelPlaced = false;
 
         // GLTF loader
         const loader = new THREE.GLTFLoader();
 
-        // GLTF model
-        let model;
-        let modelPlaced = false; // Flag to indicate whether the model has been placed
+        // GLTF models
+        let models = {
+            'model1': '1.glb',
+            'model2': '2.glb',
+            'model3': '3.glb'
+        };
+
+        // Current model
+        let currentModel = null;
 
         function setup() {
             // renderer
@@ -37,21 +47,27 @@
                 antialias: false,
                 alpha: true,
             });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
             // camera
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth, window.innerWidth, 0.1, 100);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+
             // light
             light = new THREE.DirectionalLight(0xffffff, 0.7);
             light.position.set(1, 1, 1).normalize();
+
             // reticle
-            const innerRadius = 0.04; // The size of 1.0 corresponds to 1m.
-            const outerRadiut = 0.05;
+            const innerRadius = 0.04; 
+            const outerRadius = 0.05; 
             const thetaSegments = 30;
             const phiSegments = 1;
-            const geometry = new THREE.RingGeometry(innerRadius, outerRadiut, thetaSegments, phiSegments);
+            const geometry = new THREE.RingGeometry(innerRadius, outerRadius, thetaSegments, phiSegments);
             const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
             reticle = new THREE.Mesh(geometry, material);
             reticle.rotation.set(Math.PI * -0.5, 0, 0);
             reticle.visible = false;
+
             // scene
             scene = new THREE.Scene();
             scene.add(light);
@@ -65,19 +81,17 @@
                 if (xrHitTestSource && pose) {
                     const hitTestResults = frame.getHitTestResults(xrHitTestSource);
                     if (hitTestResults.length > 0 && !planeDetected) {
-                        planeDetected = true; // Set the flag to true once a plane is detected
+                        planeDetected = true;
                         const pose = hitTestResults[0].getPose(xrRefSpace);
                         const position = pose.transform.position;
                         reticle.visible = true;
                         reticle.position.set(position.x, position.y, position.z);
 
-                        // Load and position the model if not already placed
                         if (!modelPlaced) {
-                            loadModel();
+                            loadModel(currentModel);
                             modelPlaced = true;
                         }
-                        
-                        // Stop hit test source to prevent further plane detections
+
                         xrHitTestSource.cancel();
                     }
                 }
@@ -85,19 +99,19 @@
             renderer.render(scene, camera);
         }
 
-        function loadModel() {
+        function loadModel(modelName) {
             loader.load(
-                // path to the model
-                '1.glb',
-                // onLoad callback
+                models[modelName],
                 function (gltf) {
+                    if (model) {
+                        scene.remove(model);
+                    }
                     model = gltf.scene;
                     scene.add(model);
                     model.position.copy(reticle.position);
+                    currentModel = modelName;
                 },
-                // onProgress callback
                 undefined,
-                // onError callback
                 function (error) {
                     console.error('Error loading model', error);
                 }
@@ -137,15 +151,35 @@
                     if (supported) {
                         button.disabled = !supported;
                     } else {
-                        alert("not supported");
+                        alert("Immersive AR is not supported on this device.");
                     }
                 });
                 button.addEventListener("click", onRequestSession);
+
+                const model1Button = document.getElementById("model1-button");
+                model1Button.addEventListener("click", function () {
+                    if (xrSession && currentModel !== 'model1') {
+                        loadModel('model1');
+                    }
+                });
+
+                const model2Button = document.getElementById("model2-button");
+                model2Button.addEventListener("click", function () {
+                    if (xrSession && currentModel !== 'model2') {
+                        loadModel('model2');
+                    }
+                });
+
+                const model3Button = document.getElementById("model3-button");
+                model3Button.addEventListener("click", function () {
+                    if (xrSession && currentModel !== 'model3') {
+                        loadModel('model3');
+                    }
+                });
             } else {
-                alert("not supported!");
+                alert("WebXR is not supported on this browser.");
             }
         }
-
     </script>
 </body>
 
