@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>reticle</title>
+    <style>
+        /* CSS for positioning the back button */
+        #ar-backbtn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: none;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <button id="xr-button" class="model-button" data-model-path="3.glb" data-scale="0.4">Tap To Start</button>
+        <button id="xr-button1" class="model-button" data-model-path="1.glb" data-scale="0.5">Load Model 1</button>
+        <button id="xr-button2" class="model-button" data-model-path="2.glb" data-scale="0.5">Load Model 2</button>
+    </div>
+
+    <!-- Back button for AR -->
+    <button id="ar-backbtn" class="model-button" onclick="onARBackButtonClick()">Back</button>
+    <button id="exit-button">Stop AR</button>
+
+
+    <script>
+        let renderer, camera, light, reticle, scene;
+        let xrSession;
+        let xrRefSpace;
+        let xrViewerSpace;
+        let xrHitTestSource;
+        let planeDetected = false;
+        const loader = new THREE.GLTFLoader();
+        let model;
+        let modelPlaced = false;
+        let modelPath = '';
+        let arBackBtn;
+
+        const exit = document.getElementById('exit-button');
+
+exit.addEventListener('click', function () {
+    scene.xrSession.end();
+});
+
+        function setup() {
+            renderer = new THREE.WebGLRenderer({
+                antialias: false,
+                alpha: true,
+            });
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+            light = new THREE.DirectionalLight(0xffffff, 0.7);
+            light.position.set(1, 1, 1).normalize();
+            const innerRadius = 0.04;
+            const outerRadius = 0.05;
+            const thetaSegments = 30;
+            const phiSegments = 1;
+            const geometry = new THREE.RingGeometry(innerRadius, outerRadius, thetaSegments, phiSegments);
+            const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            reticle = new THREE.Mesh(geometry, material);
+            reticle.rotation.set(Math.PI * -0.5, 0, 0);
+            reticle.visible = false;
+            scene = new THREE.Scene();
+            scene.add(light);
+            scene.add(reticle);
+
+            // Create the back button
+            arBackBtn = document.getElementById("ar-backbtn");
+            arBackBtn.style.display = "none"; // Initially hide the button
+            document.body.appendChild(arBackBtn);
+        }
+
+        function update() {
+            xrSession.requestAnimationFrame((time, frame) => {
+                const pose = frame.getViewerPose(xrRefSpace);
+                reticle.visible = false;
+                if (xrHitTestSource && pose) {
+                    const hitTestResults = frame.getHitTestResults(xrHitTestSource);
+                    if (hitTestResults.length > 0 && !planeDetected) {
+                        planeDetected = true;
+                        const pose = hitTestResults[0].getPose(xrRefSpace);
+                        const position = pose.transform.position;
+                        reticle.visible = true;
+                        reticle.position.set(position.x, position.y, position.z);
+                        if (!modelPlaced && modelPath !== '') {
+                            loadModel(modelPath);
+                            modelPlaced = true;
+                        }
+                        xrHitTestSource.cancel();
+                    }
+                }
+            });
+            renderer.render(scene, camera);
+        }
+
+        function loadModel(path, scale) {
+            if (model) {
+                scene.remove(model);
+                model = null;
+            }
+            loader.load(
+                path,
+                function (gltf) {
+                    model = gltf.scene;
+                    model.scale.set(scale, scale, scale); // Set the scale of the model
+                    scene.add(model);
+                    model.position.copy(reticle.position);
+                    // Show the back button when the model is loaded
+                    arBackBtn.style.display = "block";
+                },
+                undefined,
+                function (error) {
+                    console.error('Error loading model', error);
+                }
+            );
+        }
+
+        function onRequestSession(modelPath, scale) {
+            navigator.xr
+                .requestSession("immersive-ar", { requiredFeatures: ["local", "hit-test"] })
+                .then(session => onStartSession(session, modelPath, scale));
+        }
+
+        function onStartSession(session, modelPath, scale) {
+            renderer.xr.enabled = true;
+            renderer.xr.setReferenceSpaceType("local");
+            renderer.xr.setSession(session);
+            xrSession = session;
+            xrSession.requestReferenceSpace("viewer").then(refSpace => {
+                xrViewerSpace = refSpace;
+                xrSession.requestHitTestSource({ space: xrViewerSpace }).then((hitTestSource) => {
+                    xrHitTestSource = hitTestSource;
+                });
+            });
+            xrSession.requestReferenceSpace("local").then(refSpace => {
+                xrRefSpace = refSpace;
+                renderer.setAnimationLoop(update);
+                if (modelPath) {
+                    loadModel(modelPath, scale);
+                }
+            });
+        }
+
+        function onARBackButtonClick() {
+            // Hide the back button
+            arBackBtn.style.display = "none";
+
+            // Remove the loaded model from the scene
+            if (model) {
+                scene.remove(model);
+                model = null;
+                modelPlaced = false;
+            }
+        }
+       
+
+        window.onload = () => {
+            setup();
+            if ("xr" in navigator) {
+                const buttons = document.querySelectorAll(".model-button");
+
+                buttons.forEach(button => {
+                    button.addEventListener("click", function () {
+                        const modelPath = this.getAttribute("data-model-path");
+                        const scale = parseFloat(this.getAttribute("data-scale")); // Parse scale attribute to float
+                        onRequestSession(modelPath, scale);
+                    });
+                });
+
+                navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
+                    if (!supported) {
+                        alert("AR not supported");
+                    }
+                });
+            } else {
+                alert("WebXR not supported!");
+            }
+        }
+    </script>
+</body>
+
+</html>
