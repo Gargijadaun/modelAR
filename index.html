@@ -11,9 +11,10 @@
 
 <body>
     <div class="container">
-        <button id="xr-button1">Load Model 1</button>
-        <button id="xr-button2">Load Model 2</button>
-        <button id="xr-button3">Load Model 3</button>
+        <button id="xr-button">Tap To Start</button>
+        <button class="model-btn" data-model="1.glb">Load Model 1</button>
+        <button class="model-btn" data-model="2.glb">Load Model 2</button>
+        <button class="model-btn" data-model="3.glb">Load Model 3</button>
         <button id="backbtn">Back</button>
     </div>
     <script>
@@ -28,6 +29,7 @@
         let modelPlaced = false;
         let modelPath = '';
         let backBtn;
+        let modelButtons;
 
         function setup() {
             renderer = new THREE.WebGLRenderer({
@@ -51,11 +53,21 @@
             scene.add(reticle);
 
             // Create the back button
-             backBtn = document.getElementById("backbtn");
-            // backBtn.innerText = "Back";
+            backBtn = document.getElementById("backbtn");
             backBtn.style.display = "none"; // Initially hide the back button
             backBtn.addEventListener("click", onBackButtonClick);
             document.body.appendChild(backBtn);
+
+            // Get all model buttons
+            modelButtons = document.querySelectorAll(".model-btn");
+            modelButtons.forEach(btn => {
+                btn.addEventListener("click", function () {
+                    modelPath = this.getAttribute("data-model");
+                    if (xrSession) {
+                        loadModel(modelPath);
+                    }
+                });
+            });
         }
 
         function update() {
@@ -82,14 +94,18 @@
         }
 
         function loadModel(path) {
+            if (model) {
+                scene.remove(model);
+                model = null;
+            }
+
             loader.load(
                 path,
                 function (gltf) {
                     model = gltf.scene;
                     scene.add(model);
                     model.position.copy(reticle.position);
-                    // Show the back button when the model is loaded
-                    backBtn.style.display = "block";
+                    backBtn.style.display = "block"; // Show the back button when the model is loaded
                 },
                 undefined,
                 function (error) {
@@ -122,13 +138,12 @@
         }
 
         function onBackButtonClick() {
-            // Hide the back button
-            backBtn.style.display = "none";
+            backBtn.style.display = "none"; // Hide the back button
 
-            // Show the three buttons again
-            document.getElementById("xr-button1").style.display = "block";
-            document.getElementById("xr-button2").style.display = "block";
-            document.getElementById("xr-button3").style.display = "block";
+            // Show model buttons again
+            modelButtons.forEach(btn => {
+                btn.style.display = "block";
+            });
 
             // Remove the loaded model from the scene
             if (model) {
@@ -140,14 +155,19 @@
 
         window.onload = () => {
             setup();
-
-            const buttons = document.querySelectorAll("[id^='xr-button']");
-            buttons.forEach(button => {
-                button.addEventListener("click", function () {
-                    modelPath = button.id === "xr-button1" ? '1.glb' : button.id === "xr-button2" ? '2.glb' : '3.glb';
-                    onRequestSession();
+            if ("xr" in navigator) {
+                const button = document.getElementById("xr-button");
+                navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
+                    if (supported) {
+                        button.disabled = !supported;
+                    } else {
+                        alert("AR not supported");
+                    }
                 });
-            });
+                button.addEventListener("click", onRequestSession);
+            } else {
+                alert("WebXR not supported!");
+            }
         }
     </script>
 </body>
