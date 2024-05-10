@@ -11,9 +11,10 @@
 
 <body>
     <div class="container">
-        <button id="xr-button">Tap To Start</button>
         <button id="xr-button1">Load Model 1</button>
         <button id="xr-button2">Load Model 2</button>
+        <button id="xr-button3">Load Model 3</button>
+        <button id="backbtn">Back</button>
     </div>
     <script>
         let renderer, camera, light, reticle, scene;
@@ -50,8 +51,8 @@
             scene.add(reticle);
 
             // Create the back button
-            backBtn = document.createElement("button");
-            backBtn.innerText = "Back";
+             backBtn = document.getElementById("backbtn");
+            // backBtn.innerText = "Back";
             backBtn.style.display = "none"; // Initially hide the back button
             backBtn.addEventListener("click", onBackButtonClick);
             document.body.appendChild(backBtn);
@@ -125,9 +126,9 @@
             backBtn.style.display = "none";
 
             // Show the three buttons again
-            document.getElementById("xr-button").style.display = "block";
             document.getElementById("xr-button1").style.display = "block";
             document.getElementById("xr-button2").style.display = "block";
+            document.getElementById("xr-button3").style.display = "block";
 
             // Remove the loaded model from the scene
             if (model) {
@@ -139,54 +140,13 @@
 
         window.onload = () => {
             setup();
-            if ("xr" in navigator) {
-                const button = document.getElementById("xr-button");
-                const button1 = document.getElementById("xr-button1");
-                const button2 = document.getElementById("xr-button2");
 
-                navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
-                    if (supported) {
-                        button.disabled = !supported;
-                    } else {
-                        alert("AR not supported");
-                    }
+            const buttons = document.querySelectorAll("[id^='xr-button']");
+            buttons.forEach(button => {
+                button.addEventListener("click", function () {
+                    modelPath = button.id === "xr-button1" ? '1.glb' : button.id === "xr-button2" ? '2.glb' : '3.glb';
+                    onRequestSession();
                 });
-                button.addEventListener("click", onRequestSession);
-                button1.addEventListener("click", function () {
-                    modelPath = '1.glb';
-                    if (xrSession) {
-                        loadModel(modelPath);
-                    }
-                });
-                button2.addEventListener("click", function () {
-                    modelPath = '2.glb';
-                    if (xrSession) {
-                        loadModel(modelPath);
-                    }
-                });
-            } else {
-                alert("WebXR not supported!");
-            }
-
-            document.getElementById('xr-button1').addEventListener('click', function () {
-                modelPath = '1.glb';
-                if (xrSession) {
-                    loadModel(modelPath);
-                }
-            });
-
-            document.getElementById('xr-button').addEventListener('click', function () {
-                modelPath = '2.glb';
-                if (xrSession) {
-                    loadModel(modelPath);
-                }
-            });
-
-            document.getElementById('xr-button2').addEventListener('click', function () {
-                modelPath = '3.glb';
-                if (xrSession) {
-                    loadModel(modelPath);
-                }
             });
         }
     </script>
