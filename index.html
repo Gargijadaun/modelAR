@@ -15,7 +15,7 @@
         <button id="xr-button1" class="model-button" data-model-path="1.glb">Load Model 1</button>
         <button id="xr-button2" class="model-button" data-model-path="2.glb">Load Model 2</button>
         <button id="backbtn">Back</button>
-        
+
     </div>
     <script>
         let renderer, camera, light, reticle, scene;
@@ -52,7 +52,7 @@
             scene.add(reticle);
 
             // Create the back button
-             backBtn = document.getElementById("backbtn");
+            backBtn = document.getElementById("backbtn");
             // backBtn.innerText = "Back";
             backBtn.style.display = "none"; // Initially hide the back button
             backBtn.addEventListener("click", onBackButtonClick);
@@ -83,6 +83,10 @@
         }
 
         function loadModel(path) {
+            if (model) {
+                scene.remove(model);
+                model = null;
+            }
             loader.load(
                 path,
                 function (gltf) {
@@ -99,13 +103,13 @@
             );
         }
 
-        function onRequestSession() {
+        function onRequestSession(modelPath) {
             navigator.xr
                 .requestSession("immersive-ar", { requiredFeatures: ["local", "hit-test"] })
-                .then(onStartSession);
+                .then(session => onStartSession(session, modelPath));
         }
 
-        function onStartSession(session) {
+        function onStartSession(session, modelPath) {
             renderer.xr.enabled = true;
             renderer.xr.setReferenceSpaceType("local");
             renderer.xr.setSession(session);
@@ -119,17 +123,15 @@
             xrSession.requestReferenceSpace("local").then(refSpace => {
                 xrRefSpace = refSpace;
                 renderer.setAnimationLoop(update);
+                if (modelPath) {
+                    loadModel(modelPath);
+                }
             });
         }
 
         function onBackButtonClick() {
             // Hide the back button
             backBtn.style.display = "none";
-
-            // Show the three buttons again
-            document.getElementById("xr-button").style.display = "block";
-            document.getElementById("xr-button1").style.display = "block";
-            document.getElementById("xr-button2").style.display = "block";
 
             // Remove the loaded model from the scene
             if (model) {
@@ -142,54 +144,23 @@
         window.onload = () => {
             setup();
             if ("xr" in navigator) {
-                const button = document.getElementById("xr-button");
-                const button1 = document.getElementById("xr-button1");
-                const button2 = document.getElementById("xr-button2");
+                const buttons = document.querySelectorAll(".model-button");
+
+                buttons.forEach(button => {
+                    button.addEventListener("click", function () {
+                        modelPath = this.getAttribute("data-model-path");
+                        onRequestSession(modelPath);
+                    });
+                });
 
                 navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
-                    if (supported) {
-                        button.disabled = !supported;
-                    } else {
+                    if (!supported) {
                         alert("AR not supported");
-                    }
-                });
-                button.addEventListener("click", onRequestSession);
-                button1.addEventListener("click", function () {
-                    modelPath = '1.glb';
-                    if (xrSession) {
-                        loadModel(modelPath);
-                    }
-                });
-                button2.addEventListener("click", function () {
-                    modelPath = '2.glb';
-                    if (xrSession) {
-                        loadModel(modelPath);
                     }
                 });
             } else {
                 alert("WebXR not supported!");
             }
-
-            document.getElementById('xr-button1').addEventListener('click', function () {
-                modelPath = '1.glb';
-                if (xrSession) {
-                    loadModel(modelPath);
-                }
-            });
-
-            document.getElementById('xr-button').addEventListener('click', function () {
-                modelPath = '2.glb';
-                if (xrSession) {
-                    loadModel(modelPath);
-                }
-            });
-
-            document.getElementById('xr-button2').addEventListener('click', function () {
-                modelPath = '3.glb';
-                if (xrSession) {
-                    loadModel(modelPath);
-                }
-            });
         }
     </script>
 </body>
