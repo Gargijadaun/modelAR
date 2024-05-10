@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>AR Scene with Back Button</title>
+    <title>reticle</title>
     <style>
         /* CSS for positioning the back button */
         #ar-backbtn {
@@ -12,11 +12,10 @@
             left: 20px;
             display: none;
         }
-
-        canvas {
-            display: block;
-        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
 <body>
@@ -30,8 +29,7 @@
     <button id="ar-backbtn" class="model-button" onclick="onARBackButtonClick()">Back</button>
     <button id="exit-button">Stop AR</button>
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+
     <script>
         let renderer, camera, light, reticle, scene;
         let xrSession;
@@ -47,9 +45,9 @@
 
         const exit = document.getElementById('exit-button');
 
-        exit.addEventListener('click', function () {
-            scene.xrSession.end();
-        });
+exit.addEventListener('click', function () {
+    scene.xrSession.end();
+});
 
         function setup() {
             renderer = new THREE.WebGLRenderer({
@@ -72,7 +70,7 @@
             scene.add(light);
             scene.add(reticle);
 
-            // Create the back button for AR
+            // Create the back button
             arBackBtn = document.getElementById("ar-backbtn");
             arBackBtn.style.display = "none"; // Initially hide the button
             document.body.appendChild(arBackBtn);
@@ -160,6 +158,7 @@
                 modelPlaced = false;
             }
         }
+       
 
         window.onload = () => {
             setup();
