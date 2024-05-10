@@ -11,11 +11,11 @@
 
 <body>
     <div class="container">
-        <button id="xr-button">Tap To Start</button>
-        <button class="model-btn" data-model="1.glb">Load Model 1</button>
-        <button class="model-btn" data-model="2.glb">Load Model 2</button>
-        <button class="model-btn" data-model="3.glb">Load Model 3</button>
+        <button id="xr-button" class="model-button" data-model-path="3.glb">Tap To Start</button>
+        <button id="xr-button1" class="model-button" data-model-path="1.glb">Load Model 1</button>
+        <button id="xr-button2" class="model-button" data-model-path="2.glb">Load Model 2</button>
         <button id="backbtn">Back</button>
+        
     </div>
     <script>
         let renderer, camera, light, reticle, scene;
@@ -29,7 +29,6 @@
         let modelPlaced = false;
         let modelPath = '';
         let backBtn;
-        let modelButtons;
 
         function setup() {
             renderer = new THREE.WebGLRenderer({
@@ -53,21 +52,11 @@
             scene.add(reticle);
 
             // Create the back button
-            backBtn = document.getElementById("backbtn");
+             backBtn = document.getElementById("backbtn");
+            // backBtn.innerText = "Back";
             backBtn.style.display = "none"; // Initially hide the back button
             backBtn.addEventListener("click", onBackButtonClick);
             document.body.appendChild(backBtn);
-
-            // Get all model buttons
-            modelButtons = document.querySelectorAll(".model-btn");
-            modelButtons.forEach(btn => {
-                btn.addEventListener("click", function () {
-                    modelPath = this.getAttribute("data-model");
-                    if (xrSession) {
-                        loadModel(modelPath);
-                    }
-                });
-            });
         }
 
         function update() {
@@ -94,18 +83,14 @@
         }
 
         function loadModel(path) {
-            if (model) {
-                scene.remove(model);
-                model = null;
-            }
-
             loader.load(
                 path,
                 function (gltf) {
                     model = gltf.scene;
                     scene.add(model);
                     model.position.copy(reticle.position);
-                    backBtn.style.display = "block"; // Show the back button when the model is loaded
+                    // Show the back button when the model is loaded
+                    backBtn.style.display = "block";
                 },
                 undefined,
                 function (error) {
@@ -138,12 +123,13 @@
         }
 
         function onBackButtonClick() {
-            backBtn.style.display = "none"; // Hide the back button
+            // Hide the back button
+            backBtn.style.display = "none";
 
-            // Show model buttons again
-            modelButtons.forEach(btn => {
-                btn.style.display = "block";
-            });
+            // Show the three buttons again
+            document.getElementById("xr-button").style.display = "block";
+            document.getElementById("xr-button1").style.display = "block";
+            document.getElementById("xr-button2").style.display = "block";
 
             // Remove the loaded model from the scene
             if (model) {
@@ -154,21 +140,30 @@
         }
 
         window.onload = () => {
-            setup();
-            if ("xr" in navigator) {
-                const button = document.getElementById("xr-button");
-                navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
-                    if (supported) {
-                        button.disabled = !supported;
-                    } else {
-                        alert("AR not supported");
-                    }
-                });
-                button.addEventListener("click", onRequestSession);
-            } else {
-                alert("WebXR not supported!");
+    setup();
+    if ("xr" in navigator) {
+        const buttons = document.querySelectorAll(".model-button");
+
+        navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
+            if (!supported) {
+                alert("AR not supported");
             }
-        }
+        });
+
+        buttons.forEach((button) => {
+            button.addEventListener("click", function () {
+                modelPath = this.dataset.modelPath;
+                if (xrSession) {
+                    loadModel(modelPath);
+                }
+            });
+        });
+    } else {
+        alert("WebXR not supported!");
+    }
+};
+
+        
     </script>
 </body>
 
