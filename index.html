@@ -140,30 +140,57 @@
         }
 
         window.onload = () => {
-    setup();
-    if ("xr" in navigator) {
-        const buttons = document.querySelectorAll(".model-button");
+            setup();
+            if ("xr" in navigator) {
+                const button = document.getElementById("xr-button");
+                const button1 = document.getElementById("xr-button1");
+                const button2 = document.getElementById("xr-button2");
 
-        navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
-            if (!supported) {
-                alert("AR not supported");
+                navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
+                    if (supported) {
+                        button.disabled = !supported;
+                    } else {
+                        alert("AR not supported");
+                    }
+                });
+                button.addEventListener("click", onRequestSession);
+                button1.addEventListener("click", function () {
+                    modelPath = '1.glb';
+                    if (xrSession) {
+                        loadModel(modelPath);
+                    }
+                });
+                button2.addEventListener("click", function () {
+                    modelPath = '2.glb';
+                    if (xrSession) {
+                        loadModel(modelPath);
+                    }
+                });
+            } else {
+                alert("WebXR not supported!");
             }
-        });
 
-        buttons.forEach((button) => {
-            button.addEventListener("click", function () {
-                modelPath = this.dataset.modelPath;
+            document.getElementById('xr-button1').addEventListener('click', function () {
+                modelPath = '1.glb';
                 if (xrSession) {
                     loadModel(modelPath);
                 }
             });
-        });
-    } else {
-        alert("WebXR not supported!");
-    }
-};
 
-        
+            document.getElementById('xr-button').addEventListener('click', function () {
+                modelPath = '2.glb';
+                if (xrSession) {
+                    loadModel(modelPath);
+                }
+            });
+
+            document.getElementById('xr-button2').addEventListener('click', function () {
+                modelPath = '3.glb';
+                if (xrSession) {
+                    loadModel(modelPath);
+                }
+            });
+        }
     </script>
 </body>
 
