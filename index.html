@@ -73,15 +73,11 @@
 
 		</style>
 		<script src="https://aframe.io/releases/1.1.0/aframe.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
 		<script src="ar-components.js"></script>
 		<script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v4.0.1/dist/aframe-physics-system.min.js"></script>
 	</head>
 	<body class="inline">
 		<a-scene webxr="optionalFeatures: hit-test, dom-overlay; overlayElement:#overlay;" physics="debug: false">
-			<a-assets>
-				<a-asset-item id="ball" src="./2.glb" position="0.1 2.36 -1.5"></a-asset-item>
-			</a-assets>
 			<a-sphere id="ball" dynamic-body radius="0.1" color="orange" position="0.1 2.36 -1.5"></a-sphere>
 			<a-entity id="hoop" rotation="90 0 0" position="0 2 -1.8" hide-in-ar-mode> 
 				<a-torus scale="0.6 0.6 0.6" position="0 0.173 -0.1" color="#43A367" radius="0.25" radius-tubular="0.005"></a-torus>
@@ -99,7 +95,7 @@
 				<a-plane scale="0.6 0.6 0.6" position="0 0 1.12355" rotation="-90 0 0" width="2" height="3" static-body geometry="height: 4.37" visible="false"></a-plane>
 				<a-cone scale="0.6 0.6 0.6" position="0 0.173 -0.010" color="tomato" radius-bottom="0.25" radius-top="0.3" material="side: double; opacity:0.5; transparent: true;" geometry="height: 0.29; openEnded: true" rotation="90 0 0"></a-cone>
 			</a-entity>
-			<a-entity id="ar-hit-test" ar-hit-test="doHitTest:false" visible="false">
+			<a-entity ar-hit-test="doHitTest:false" visible="false">
 				<a-plane
 					rotation="-90 0 0"
 					width="0.2"
@@ -134,7 +130,7 @@
 					<p id="instructions">Place the basket along a wall</p>
 				</section>
 				<div style="display: flex; justify-content: space-between; align-self: stretch;">
-					<button id="go-button">Enter AR</button>
+					<button id="go-button">Ready to Play!</button>
 					<button id="exit-button">Stop AR</button>
 				</div>
 			</div>
@@ -150,7 +146,6 @@
 			const hoop = document.getElementById('hoop');
 			const instructions = document.getElementById('instructions');
 			const ball = document.getElementById('ball');
-			const animatedModel = document.getElementById('animatedModel');
 			const button = document.getElementById('go-button');
 			const exit = document.getElementById('exit-button');
 			const upVector = new THREE.Vector3(0, 1, 0);
@@ -187,7 +182,6 @@
 
 			scene.addEventListener("enter-vr", () => {
 				const domOverlay = hasDomOverlay(scene.xrSession);
-				animatedModel.setAttribute('visible', 'false');
 				document.getElementById('text').setAttribute('text', 'value', 'Overlay: ' + domOverlay);
 				document.body.classList.remove("inline");
 				if (scene.is("ar-mode")) {
@@ -251,12 +245,12 @@
 					document.body.classList.add("playing");
 					reticle.setAttribute('ar-hit-test', 'doHitTest:false');
 					reticle.setAttribute('visible', 'false');
-					animatedModel.setAttribute('visible', 'true'); // Load model when starting play
 					return;
 				}
 			}
 
-			button.addEventListener('click', readyToStartPlay); // Changed from 'mousedown' to 'click'
+			button.addEventListener('mousedown', readyToStartPlay);
+			button.addEventListener('touchstart', readyToStartPlay);
 		</script>
 	</body>
 </html>
