@@ -3,16 +3,19 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>AR Scene with Back Button</title>
+    <title>reticle</title>
     <style>
         /* CSS for positioning the back button */
         #ar-backbtn {
-            position: absolute;
+            position: fixed;
             top: 20px;
             left: 20px;
             display: none;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
 
 <body>
@@ -23,10 +26,10 @@
     </div>
 
     <!-- Back button for AR -->
-    <button id="ar-backbtn" onclick="onARBackButtonClick()">Back</button>
+    <button id="ar-backbtn" class="model-button" onclick="onARBackButtonClick()">Back</button>
+    <button id="exit-button">Stop AR</button>
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+
     <script>
         let renderer, camera, light, reticle, scene;
         let xrSession;
@@ -39,6 +42,12 @@
         let modelPlaced = false;
         let modelPath = '';
         let arBackBtn;
+
+        const exit = document.getElementById('exit-button');
+
+exit.addEventListener('click', function () {
+    scene.xrSession.end();
+});
 
         function setup() {
             renderer = new THREE.WebGLRenderer({
@@ -61,8 +70,10 @@
             scene.add(light);
             scene.add(reticle);
 
-            // Append renderer DOM element to body
-            document.body.appendChild(renderer.domElement);
+            // Create the back button
+            arBackBtn = document.getElementById("ar-backbtn");
+            arBackBtn.style.display = "none"; // Initially hide the button
+            document.body.appendChild(arBackBtn);
         }
 
         function update() {
@@ -101,7 +112,7 @@
                     scene.add(model);
                     model.position.copy(reticle.position);
                     // Show the back button when the model is loaded
-                    document.getElementById('ar-backbtn').style.display = 'block';
+                    arBackBtn.style.display = "block";
                 },
                 undefined,
                 function (error) {
@@ -134,45 +145,12 @@
                     loadModel(modelPath, scale);
                 }
             });
-
-            // Append exit button to the XR session overlay
-            const exitButton = document.createElement('button');
-            exitButton.id = 'exit-button';
-            exitButton.textContent = 'Stop AR';
-            exitButton.style.position = 'absolute';
-            exitButton.style.top = '20px';
-            exitButton.style.right = '20px';
-            exitButton.style.display = 'none';
-            exitButton.addEventListener('click', () => {
-                session.end();
-            });
-            session.addEventListener('end', () => {
-                exitButton.style.display = 'none'; // Hide the exit button when session ends
-            });
-            session.addEventListener('inputsourceschange', () => {
-                if (session.inputSources && session.inputSources.length > 0) {
-                    exitButton.style.display = 'block'; // Show the exit button when XR inputs are available
-                } else {
-                    exitButton.style.display = 'none'; // Hide the exit button if no XR inputs are available
-                }
-            });
-            session.addEventListener('selectstart', () => {
-                exitButton.style.display = 'none'; // Hide the exit button when user interacts with the scene
-            });
-            session.addEventListener('selectend', () => {
-                exitButton.style.display = 'block'; // Show the exit button when user interaction ends
-            });
-            session.requestReferenceSpace('viewer').then(viewerRefSpace => {
-                const viewer = viewerRefSpace.getViewerPose().transform.matrix;
-                exitButton.style.transformOrigin = 'top right';
-                exitButton.style.transform = `matrix3d(${viewer.join(',')})`;
-                session.domOverlay.getRootNode().appendChild(exitButton);
-            });
         }
 
         function onARBackButtonClick() {
             // Hide the back button
-            document.getElementById('ar-backbtn').style.display = 'none';
+            arBackBtn.style.display = "none";
+
             // Remove the loaded model from the scene
             if (model) {
                 scene.remove(model);
@@ -180,14 +158,16 @@
                 modelPlaced = false;
             }
         }
+       
 
         window.onload = () => {
             setup();
             if ("xr" in navigator) {
                 const buttons = document.querySelectorAll(".model-button");
+
                 buttons.forEach(button => {
                     button.addEventListener("click", function () {
-                        modelPath = this.getAttribute("data-model-path");
+                        const modelPath = this.getAttribute("data-model-path");
                         const scale = parseFloat(this.getAttribute("data-scale")); // Parse scale attribute to float
                         onRequestSession(modelPath, scale);
                     });
