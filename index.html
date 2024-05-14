@@ -87,28 +87,27 @@
             });
             renderer.render(scene, camera);
         }
-
         function loadModel(path, scale) {
-            if (model) {
-                scene.remove(model);
-                model = null;
-            }
-            loader.load(
-                path,
-                function (gltf) {
-                    model = gltf.scene;
-                    model.scale.set(scale, scale, scale); // Set the scale of the model
-                    scene.add(model);
-                    model.position.copy(reticle.position);
-                    // Show the back button when the model is loaded
-                    document.getElementById('ar-backbtn').style.display = 'block';
-                },
-                undefined,
-                function (error) {
-                    console.error('Error loading model', error);
-                }
-            );
+    if (model) {
+        scene.remove(model);
+        model = null;
+    }
+    loader.load(
+        path,
+        function (gltf) {
+            model = gltf.scene;
+            model.scale.set(scale, scale, scale); // Set the scale of the model
+            scene.add(model);
+            model.position.copy(reticle.position);
+            // Show the back button when the model is loaded
+            document.getElementById('exit-button').style.display = 'block';
+        },
+        undefined,
+        function (error) {
+            console.error('Error loading model', error);
         }
+    );
+}
 
         function onRequestSession(modelPath, scale) {
             navigator.xr
