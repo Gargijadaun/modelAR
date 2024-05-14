@@ -18,12 +18,12 @@
 <body>
     <div class="container">
         <button id="xr-button" class="model-button" data-model-path="3.glb" data-scale="0.4">Tap To Start</button>
-        <button id="xr-button1" class="model-button" data-model-path="1.glb" data-scale="0.5">Load Model 1</button>
-        <button id="xr-button2" class="model-button" data-model-path="2.glb" data-scale="0.5">Load Model 2</button>
+        <button class="model-button" data-model-path="1.glb" data-scale="0.5">Load Model 1</button>
+        <button class="model-button" data-model-path="2.glb" data-scale="0.5">Load Model 2</button>
     </div>
 
     <!-- Back button for AR -->
-    <button id="ar-backbtn" onclick="onARBackButtonClick()">Back</button>
+    <button id="ar-backbtn">Back</button>
 
     <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
@@ -41,18 +41,11 @@
         let arBackBtn;
 
         function setup() {
-            renderer = new THREE.WebGLRenderer({
-                antialias: false,
-                alpha: true,
-            });
+            renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
             light = new THREE.DirectionalLight(0xffffff, 0.7);
             light.position.set(1, 1, 1).normalize();
-            const innerRadius = 0.04;
-            const outerRadius = 0.05;
-            const thetaSegments = 30;
-            const phiSegments = 1;
-            const geometry = new THREE.RingGeometry(innerRadius, outerRadius, thetaSegments, phiSegments);
+            const geometry = new THREE.RingGeometry(0.04, 0.05, 30, 1);
             const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
             reticle = new THREE.Mesh(geometry, material);
             reticle.rotation.set(Math.PI * -0.5, 0, 0);
@@ -61,7 +54,6 @@
             scene.add(light);
             scene.add(reticle);
 
-            // Append renderer DOM element to body
             document.body.appendChild(renderer.domElement);
         }
 
@@ -87,31 +79,30 @@
             });
             renderer.render(scene, camera);
         }
+
         function loadModel(path, scale) {
-    if (model) {
-        scene.remove(model);
-        model = null;
-    }
-    loader.load(
-        path,
-        function (gltf) {
-            model = gltf.scene;
-            model.scale.set(scale, scale, scale); // Set the scale of the model
-            scene.add(model);
-            model.position.copy(reticle.position);
-            // Show the back button when the model is loaded
-            document.getElementById('exit-button').style.display = 'block';
-        },
-        undefined,
-        function (error) {
-            console.error('Error loading model', error);
+            if (model) {
+                scene.remove(model);
+                model = null;
+            }
+            loader.load(
+                path,
+                function (gltf) {
+                    model = gltf.scene;
+                    model.scale.set(scale, scale, scale);
+                    scene.add(model);
+                    model.position.copy(reticle.position);
+                    document.getElementById('ar-backbtn').style.display = 'block';
+                },
+                undefined,
+                function (error) {
+                    console.error('Error loading model', error);
+                }
+            );
         }
-    );
-}
 
         function onRequestSession(modelPath, scale) {
-            navigator.xr
-                .requestSession("immersive-ar", { requiredFeatures: ["local", "hit-test"] })
+            navigator.xr.requestSession("immersive-ar", { requiredFeatures: ["local", "hit-test"] })
                 .then(session => onStartSession(session, modelPath, scale));
         }
 
@@ -134,45 +125,32 @@
                 }
             });
 
-            // Append exit button to the XR session overlay
             const exitButton = document.createElement('button');
-            exitButton.id = 'exit-button';
             exitButton.textContent = 'Stop AR';
             exitButton.style.position = 'absolute';
             exitButton.style.top = '20px';
             exitButton.style.right = '20px';
             exitButton.style.display = 'none';
-            exitButton.addEventListener('click', () => {
-                session.end();
-            });
-            session.addEventListener('end', () => {
-                exitButton.style.display = 'none'; // Hide the exit button when session ends
-            });
+            exitButton.addEventListener('click', () => { session.end(); });
+            session.addEventListener('end', () => { exitButton.style.display = 'none'; });
             session.addEventListener('inputsourceschange', () => {
-                if (session.inputSources && session.inputSources.length > 0) {
-                    exitButton.style.display = 'block'; // Show the exit button when XR inputs are available
-                } else {
-                    exitButton.style.display = 'none'; // Hide the exit button if no XR inputs are available
-                }
+                exitButton.style.display = session.inputSources && session.inputSources.length > 0 ? 'block' : 'none';
             });
-            session.addEventListener('selectstart', () => {
-                exitButton.style.display = 'none'; // Hide the exit button when user interacts with the scene
+            session.addEventListener('selectstart', () => { exitButton.style.display = 'none'; });
+            session.addEventListener('selectend', () => { exitButton.style.display = 'block'; });
+            
+            // Append exit button to the XR session overlay
+            session.updateRenderState({ baseLayer: new XRWebGLLayer(session, renderer) });
+            session.addEventListener('select', () => {
+                session.requestHitTest(
+                    frameOfRef.getViewerPose(frame.session.renderState.baseLayer)
+                );
             });
-            session.addEventListener('selectend', () => {
-                exitButton.style.display = 'block'; // Show the exit button when user interaction ends
-            });
-            session.requestReferenceSpace('viewer').then(viewerRefSpace => {
-                const viewer = viewerRefSpace.getViewerPose().transform.matrix;
-                exitButton.style.transformOrigin = 'top right';
-                exitButton.style.transform = `matrix3d(${viewer.join(',')})`;
-                session.domOverlay.getRootNode().appendChild(exitButton);
-            });
+            document.body.appendChild(exitButton);
         }
 
         function onARBackButtonClick() {
-            // Hide the back button
             document.getElementById('ar-backbtn').style.display = 'none';
-            // Remove the loaded model from the scene
             if (model) {
                 scene.remove(model);
                 model = null;
@@ -187,11 +165,10 @@
                 buttons.forEach(button => {
                     button.addEventListener("click", function () {
                         modelPath = this.getAttribute("data-model-path");
-                        const scale = parseFloat(this.getAttribute("data-scale")); // Parse scale attribute to float
+                        const scale = parseFloat(this.getAttribute("data-scale"));
                         onRequestSession(modelPath, scale);
                     });
                 });
-
                 navigator.xr.isSessionSupported("immersive-ar").then((supported) => {
                     if (!supported) {
                         alert("AR not supported");
